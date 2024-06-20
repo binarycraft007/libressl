@@ -4,6 +4,8 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const libressl_dep = b.dependency("libressl", .{});
+
     const t = target.result;
     var flags = std.ArrayList([]const u8).init(b.allocator);
     defer flags.deinit();
@@ -11,145 +13,248 @@ pub fn build(b: *std.Build) !void {
     if (t.isDarwin()) {
         try flags.append("-fno-common");
     }
-    const lib = b.addStaticLibrary(.{
-        .name = "libressl",
+    const crypto = b.addStaticLibrary(.{
+        .name = "crypto",
         .target = target,
         .optimize = optimize,
     });
-    lib.linkLibC();
-    lib.addCSourceFiles(.{
-        .root = b.path("tmp/crypto"),
+    crypto.linkLibC();
+    crypto.addCSourceFiles(.{
+        .root = libressl_dep.path("crypto"),
         .files = &crypto_src_common,
         .flags = flags.items,
     });
     if (t.os.tag == .linux and t.cpu.arch == .x86_64) {
-        lib.addCSourceFiles(.{
-            .root = b.path("tmp/crypto"),
+        crypto.addCSourceFiles(.{
+            .root = libressl_dep.path("crypto"),
             .files = &asm_elf_x86_64,
             .flags = flags.items,
         });
-        lib.defineCMacro("endbr64", "");
-        lib.defineCMacro("endbr32", "");
-        lib.defineCMacro("AES_ASM", null);
-        lib.defineCMacro("BSAES_ASM", null);
-        lib.defineCMacro("VPAES_ASM", null);
-        lib.defineCMacro("OPENSSL_IA32_SSE2", null);
-        lib.defineCMacro("OPENSSL_BN_ASM_MONT", null);
-        lib.defineCMacro("OPENSSL_BN_ASM_MONT5", null);
-        lib.defineCMacro("MD5_ASM", null);
-        lib.defineCMacro("GHASH_ASM", null);
-        lib.defineCMacro("RSA_ASM", null);
-        lib.defineCMacro("SHA1_ASM", null);
-        lib.defineCMacro("SHA256_ASM", null);
-        lib.defineCMacro("SHA512_ASM", null);
-        lib.defineCMacro("WHIRLPOOL_ASM", null);
-        lib.defineCMacro("OPENSSL_CPUID_OBJ", null);
+        crypto.defineCMacro("endbr64", "");
+        crypto.defineCMacro("endbr32", "");
+        crypto.defineCMacro("AES_ASM", null);
+        crypto.defineCMacro("BSAES_ASM", null);
+        crypto.defineCMacro("VPAES_ASM", null);
+        crypto.defineCMacro("OPENSSL_IA32_SSE2", null);
+        crypto.defineCMacro("OPENSSL_BN_ASM_MONT", null);
+        crypto.defineCMacro("OPENSSL_BN_ASM_MONT5", null);
+        crypto.defineCMacro("MD5_ASM", null);
+        crypto.defineCMacro("GHASH_ASM", null);
+        crypto.defineCMacro("RSA_ASM", null);
+        crypto.defineCMacro("SHA1_ASM", null);
+        crypto.defineCMacro("SHA256_ASM", null);
+        crypto.defineCMacro("SHA512_ASM", null);
+        crypto.defineCMacro("WHIRLPOOL_ASM", null);
+        crypto.defineCMacro("OPENSSL_CPUID_OBJ", null);
     } else if (t.os.tag == .macos and t.cpu.arch == .x86_64) {
-        lib.addCSourceFiles(.{
-            .root = b.path("tmp/crypto"),
+        crypto.addCSourceFiles(.{
+            .root = libressl_dep.path("crypto"),
             .files = &asm_macos_x86_64,
             .flags = flags.items,
         });
-        lib.defineCMacro("endbr64", "");
-        lib.defineCMacro("endbr32", "");
-        lib.defineCMacro("AES_ASM", null);
-        lib.defineCMacro("BSAES_ASM", null);
-        lib.defineCMacro("VPAES_ASM", null);
-        lib.defineCMacro("OPENSSL_IA32_SSE2", null);
-        lib.defineCMacro("OPENSSL_BN_ASM_MONT", null);
-        lib.defineCMacro("OPENSSL_BN_ASM_MONT5", null);
-        lib.defineCMacro("MD5_ASM", null);
-        lib.defineCMacro("GHASH_ASM", null);
-        lib.defineCMacro("RSA_ASM", null);
-        lib.defineCMacro("SHA1_ASM", null);
-        lib.defineCMacro("SHA256_ASM", null);
-        lib.defineCMacro("SHA512_ASM", null);
-        lib.defineCMacro("WHIRLPOOL_ASM", null);
-        lib.defineCMacro("OPENSSL_CPUID_OBJ", null);
+        crypto.defineCMacro("endbr64", "");
+        crypto.defineCMacro("endbr32", "");
+        crypto.defineCMacro("AES_ASM", null);
+        crypto.defineCMacro("BSAES_ASM", null);
+        crypto.defineCMacro("VPAES_ASM", null);
+        crypto.defineCMacro("OPENSSL_IA32_SSE2", null);
+        crypto.defineCMacro("OPENSSL_BN_ASM_MONT", null);
+        crypto.defineCMacro("OPENSSL_BN_ASM_MONT5", null);
+        crypto.defineCMacro("MD5_ASM", null);
+        crypto.defineCMacro("GHASH_ASM", null);
+        crypto.defineCMacro("RSA_ASM", null);
+        crypto.defineCMacro("SHA1_ASM", null);
+        crypto.defineCMacro("SHA256_ASM", null);
+        crypto.defineCMacro("SHA512_ASM", null);
+        crypto.defineCMacro("WHIRLPOOL_ASM", null);
+        crypto.defineCMacro("OPENSSL_CPUID_OBJ", null);
     } else if (t.os.tag == .windows and t.isMinGW() and
         t.cpu.arch == .x86_64)
     {
-        lib.addCSourceFiles(.{
-            .root = b.path("tmp/crypto"),
+        crypto.addCSourceFiles(.{
+            .root = libressl_dep.path("crypto"),
             .files = &asm_mingw_x86_64,
             .flags = flags.items,
         });
-        lib.defineCMacro("endbr64", "");
-        lib.defineCMacro("endbr32", "");
-        lib.defineCMacro("AES_ASM", null);
-        lib.defineCMacro("BSAES_ASM", null);
-        lib.defineCMacro("VPAES_ASM", null);
-        lib.defineCMacro("OPENSSL_IA32_SSE2", null);
-        //lib.defineCMacro("OPENSSL_BN_ASM_MONT", null);
-        //lib.defineCMacro("OPENSSL_BN_ASM_MONT5", null);
-        lib.defineCMacro("MD5_ASM", null);
-        lib.defineCMacro("GHASH_ASM", null);
-        lib.defineCMacro("RSA_ASM", null);
-        lib.defineCMacro("SHA1_ASM", null);
-        lib.defineCMacro("SHA256_ASM", null);
-        lib.defineCMacro("SHA512_ASM", null);
-        lib.defineCMacro("WHIRLPOOL_ASM", null);
-        lib.defineCMacro("OPENSSL_CPUID_OBJ", null);
+        crypto.defineCMacro("endbr64", "");
+        crypto.defineCMacro("endbr32", "");
+        crypto.defineCMacro("AES_ASM", null);
+        crypto.defineCMacro("BSAES_ASM", null);
+        crypto.defineCMacro("VPAES_ASM", null);
+        crypto.defineCMacro("OPENSSL_IA32_SSE2", null);
+        //crypto.defineCMacro("OPENSSL_BN_ASM_MONT", null);
+        //crypto.defineCMacro("OPENSSL_BN_ASM_MONT5", null);
+        crypto.defineCMacro("MD5_ASM", null);
+        crypto.defineCMacro("GHASH_ASM", null);
+        crypto.defineCMacro("RSA_ASM", null);
+        crypto.defineCMacro("SHA1_ASM", null);
+        crypto.defineCMacro("SHA256_ASM", null);
+        crypto.defineCMacro("SHA512_ASM", null);
+        crypto.defineCMacro("WHIRLPOOL_ASM", null);
+        crypto.defineCMacro("OPENSSL_CPUID_OBJ", null);
     } else {
-        lib.addCSourceFiles(.{
-            .root = b.path("tmp/crypto"),
+        crypto.defineCMacro("OPENSSL_NO_ASM", null);
+        crypto.addCSourceFiles(.{
+            .root = libressl_dep.path("crypto"),
             .files = &crypto_src_common_noasm,
             .flags = flags.items,
         });
     }
     switch (t.os.tag) {
-        .linux => lib.addCSourceFile(.{
-            .file = b.path("tmp/crypto/compat/getprogname_linux.c"),
-            .flags = flags.items,
-        }),
-        .windows => lib.addCSourceFile(.{
-            .file = b.path("tmp/crypto/compat/getprogname_windows.c"),
-            .flags = flags.items,
-        }),
+        .linux => {
+            crypto.addCSourceFiles(.{
+                .root = libressl_dep.path("crypto"),
+                .files = &crypto_src_linux,
+                .flags = flags.items,
+            });
+            if (!t.isGnu()) {
+                crypto.addCSourceFiles(.{
+                    .root = libressl_dep.path("crypto"),
+                    .files = &.{
+                        "compat/arc4random.c",
+                        "compat/arc4random_uniform.c",
+                    },
+                    .flags = flags.items,
+                });
+            }
+        },
+        .macos => {
+            crypto.addCSourceFiles(.{
+                .root = libressl_dep.path("crypto"),
+                .files = &crypto_src_macos,
+                .flags = flags.items,
+            });
+        },
+        .windows => {
+            crypto.addCSourceFiles(.{
+                .root = libressl_dep.path("crypto"),
+                .files = &crypto_src_win32,
+                .flags = flags.items,
+            });
+        },
         else => {},
     }
-    if (t.os.tag == .windows) {
-        lib.defineCMacro("OPENSSLDIR", "\"C:\\Windows\\libressl\\ssl\"");
-    } else {
-        lib.defineCMacro("OPENSSLDIR", "\"/etc/ssl\"");
+    if (t.os.tag != .windows) {
+        crypto.addCSourceFiles(.{
+            .root = libressl_dep.path("crypto"),
+            .files = &crypto_src_unix,
+            .flags = flags.items,
+        });
     }
-    lib.addIncludePath(b.path("tmp/crypto/asn1"));
-    lib.addIncludePath(b.path("tmp/crypto/bio"));
-    lib.addIncludePath(b.path("tmp/crypto/bn"));
-    lib.addIncludePath(b.path("tmp/crypto/bytestring"));
-    lib.addIncludePath(b.path("tmp/crypto/dh"));
-    lib.addIncludePath(b.path("tmp/crypto/dsa"));
-    lib.addIncludePath(b.path("tmp/crypto/curve25519"));
-    lib.addIncludePath(b.path("tmp/crypto/ec"));
-    lib.addIncludePath(b.path("tmp/crypto/ecdh"));
-    lib.addIncludePath(b.path("tmp/crypto/ecdsa"));
-    lib.addIncludePath(b.path("tmp/crypto/evp"));
-    lib.addIncludePath(b.path("tmp/crypto/hidden"));
-    lib.addIncludePath(b.path("tmp/crypto/hmac"));
-    lib.addIncludePath(b.path("tmp/crypto/lhash"));
-    lib.addIncludePath(b.path("tmp/crypto/modes"));
-    lib.addIncludePath(b.path("tmp/crypto/ocsp"));
-    lib.addIncludePath(b.path("tmp/crypto/pkcs12"));
-    lib.addIncludePath(b.path("tmp/crypto/rsa"));
-    lib.addIncludePath(b.path("tmp/crypto/sha"));
-    lib.addIncludePath(b.path("tmp/crypto/stack"));
-    lib.addIncludePath(b.path("tmp/crypto/x509"));
-    lib.addIncludePath(b.path("tmp/crypto"));
-    lib.addIncludePath(b.path("tmp/include/compat/"));
-    lib.addIncludePath(b.path("tmp/include"));
+    const openssl_dir = switch (t.os.tag) {
+        .windows => "C:\\Windows\\libressl\\ssl",
+        else => "/etc/ssl",
+    };
+    const openssl_dir_value = try std.mem.concat(b.allocator, u8, &.{
+        "\"",
+        openssl_dir,
+        "\"",
+    });
+    crypto.defineCMacro("OPENSSLDIR", openssl_dir_value);
+    crypto.addIncludePath(libressl_dep.path("crypto/asn1"));
+    crypto.addIncludePath(libressl_dep.path("crypto/bio"));
+    crypto.addIncludePath(libressl_dep.path("crypto/bn"));
+    crypto.addIncludePath(libressl_dep.path("crypto/bytestring"));
+    crypto.addIncludePath(libressl_dep.path("crypto/dh"));
+    crypto.addIncludePath(libressl_dep.path("crypto/dsa"));
+    crypto.addIncludePath(libressl_dep.path("crypto/curve25519"));
+    crypto.addIncludePath(libressl_dep.path("crypto/ec"));
+    crypto.addIncludePath(libressl_dep.path("crypto/ecdh"));
+    crypto.addIncludePath(libressl_dep.path("crypto/ecdsa"));
+    crypto.addIncludePath(libressl_dep.path("crypto/evp"));
+    crypto.addIncludePath(libressl_dep.path("crypto/hidden"));
+    crypto.addIncludePath(libressl_dep.path("crypto/hmac"));
+    crypto.addIncludePath(libressl_dep.path("crypto/lhash"));
+    crypto.addIncludePath(libressl_dep.path("crypto/modes"));
+    crypto.addIncludePath(libressl_dep.path("crypto/ocsp"));
+    crypto.addIncludePath(libressl_dep.path("crypto/pkcs12"));
+    crypto.addIncludePath(libressl_dep.path("crypto/rsa"));
+    crypto.addIncludePath(libressl_dep.path("crypto/sha"));
+    crypto.addIncludePath(libressl_dep.path("crypto/stack"));
+    crypto.addIncludePath(libressl_dep.path("crypto/x509"));
+    crypto.addIncludePath(libressl_dep.path("crypto"));
+    crypto.addIncludePath(libressl_dep.path("include/compat/"));
+    crypto.addIncludePath(libressl_dep.path("include"));
     switch (t.cpu.arch) {
-        .x86_64 => lib.addIncludePath(b.path("tmp/crypto/bn/arch/amd64")),
-        .aarch64 => lib.addIncludePath(b.path("tmp/crypto/bn/arch/aarch64")),
+        .x86_64 => {
+            crypto.addIncludePath(
+                libressl_dep.path("crypto/bn/arch/amd64"),
+            );
+        },
+        .aarch64 => {
+            crypto.addIncludePath(
+                libressl_dep.path("crypto/bn/arch/aarch64"),
+            );
+        },
+        .arm => {
+            crypto.addIncludePath(
+                libressl_dep.path("crypto/bn/arch/arm"),
+            );
+        },
         else => {},
     }
-    addCommonBuildOptions(lib, &t);
-    b.installArtifact(lib);
+    addCommonBuildOptions(crypto, &t);
+    b.installArtifact(crypto);
+
+    const ssl = b.addStaticLibrary(.{
+        .name = "ssl",
+        .target = target,
+        .optimize = optimize,
+    });
+    ssl.linkLibC();
+    ssl.linkLibrary(crypto);
+    ssl.addCSourceFiles(.{
+        .root = libressl_dep.path("ssl"),
+        .files = &ssl_src,
+        .flags = flags.items,
+    });
+    ssl.addIncludePath(libressl_dep.path("include/compat"));
+    ssl.addIncludePath(libressl_dep.path("crypto/bio"));
+    ssl.addIncludePath(libressl_dep.path("ssl/hidden"));
+    ssl.addIncludePath(libressl_dep.path("include"));
+    addCommonBuildOptions(ssl, &t);
+    b.installArtifact(ssl);
+
+    const tls = b.addStaticLibrary(.{
+        .name = "tls",
+        .target = target,
+        .optimize = optimize,
+    });
+    tls.linkLibC();
+    tls.linkLibrary(ssl);
+    tls.addCSourceFiles(.{
+        .root = libressl_dep.path("tls"),
+        .files = &tls_src,
+        .flags = flags.items,
+    });
+    if (t.os.tag == .windows) {
+        tls.addCSourceFiles(.{
+            .root = libressl_dep.path("tls"),
+            .files = &tls_win32_src,
+            .flags = flags.items,
+        });
+    }
+    tls.addIncludePath(libressl_dep.path("include"));
+    tls.addIncludePath(libressl_dep.path("include/compat"));
+    tls.installHeadersDirectory(libressl_dep.path("include"), "", .{
+        .include_extensions = &.{".h"},
+    });
+    const ca_path = b.pathJoin(&.{ openssl_dir, "cert.pem" });
+    const ca_path_value = try std.mem.concat(b.allocator, u8, &.{
+        "\"",
+        ca_path,
+        "\"",
+    });
+    tls.defineCMacro("TLS_DEFAULT_CA_FILE", ca_path_value);
+    addCommonBuildOptions(tls, &t);
+    b.installArtifact(tls);
 
     const lib_unit_tests = b.addTest(.{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
     });
+    lib_unit_tests.linkLibrary(tls);
 
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
     const test_step = b.step("test", "Run unit tests");
@@ -167,6 +272,35 @@ fn addCommonBuildOptions(
             compile.defineCMacro("_BSD_SOURCE", null);
             compile.defineCMacro("_POSIX_SOURCE", null);
             compile.defineCMacro("_GNU_SOURCE", null);
+            if (t.isGnu()) {
+                compile.defineCMacro("HAVE_ARC4RANDOM_BUF", null);
+            }
+            compile.defineCMacro("HAVE_REALLOCARRAY", null);
+            compile.defineCMacro("HAVE_ENDIAN_H", null);
+            compile.defineCMacro("HAVE_EXPLICIT_BZERO", null);
+            compile.defineCMacro("HAVE_GETENTROPY", null);
+        },
+        .macos => {
+            compile.defineCMacro("HAVE_GETPROGNAME", null);
+            compile.defineCMacro("HAVE_STRTONUM", null);
+            compile.defineCMacro("HAVE_ARC4RANDOM_BUF", null);
+            compile.defineCMacro("HAVE_GETENTROPY", null);
+        },
+        .windows => {
+            compile.defineCMacro("_GNU_SOURCE", null);
+            compile.defineCMacro("_POSIX", null);
+            compile.defineCMacro("_POSIX_SOURCE", null);
+            compile.defineCMacro("__USE_MINGW_ANSI_STDIO", null);
+            compile.defineCMacro("_CRT_SECURE_NO_WARNINGS", null);
+            compile.defineCMacro("_CRT_DEPRECATED_NO_WARNINGS", null);
+            compile.defineCMacro("_REENTRANT", null);
+            compile.defineCMacro("_POSIX_THREAD_SAFE_FUNCTIONS", null);
+            compile.defineCMacro("NO_SYSLOG", null);
+            compile.defineCMacro("WIN32_LEAN_AND_MEAN", null);
+            //compile.defineCMacro("_WIN32_WINNT", "0x0600");
+            compile.linkSystemLibrary("ws2_32");
+            compile.linkSystemLibrary("ntdll");
+            compile.linkSystemLibrary("bcrypt");
         },
         else => {
             compile.defineCMacro("HAVE_GETPROGNAME", null);
@@ -174,7 +308,17 @@ fn addCommonBuildOptions(
             compile.defineCMacro("HAVE_TIMINGSAFE_MEMCMP", null);
             compile.defineCMacro("HAVE_SYSLOG_R", null);
             compile.defineCMacro("HAVE_TIMINGSAFE_BCMP", null);
+            compile.defineCMacro("HAVE_ARC4RANDOM_BUF", null);
         },
+    }
+    if (t.os.tag != .windows) {
+        compile.defineCMacro("HAVE_SYSLOG", null);
+        compile.defineCMacro("HAVE_GETPAGESIZE", null);
+        compile.defineCMacro("HAVE_TIMEGM", null);
+        compile.defineCMacro("HAVE_STRSEP", null);
+        compile.defineCMacro("HAVE_STRLCPY", null);
+        compile.defineCMacro("HAVE_STRNDUP", null);
+        compile.defineCMacro("HAVE_STRLCAT", null);
     }
     compile.defineCMacro("HAVE_ATTRIBUTE__BOUNDED__", null);
     compile.defineCMacro("HAVE_ATTRIBUTE__DEAD__", null);
@@ -182,25 +326,13 @@ fn addCommonBuildOptions(
     compile.defineCMacro("HAVE_LITTLE_ENDIAN", null);
     compile.defineCMacro("HAVE_ASPRINTF", null);
     compile.defineCMacro("HAVE_GETOPT", null);
-    compile.defineCMacro("HAVE_REALLOCARRAY", null);
     compile.defineCMacro("HAVE_STRCASECMP", null);
-    compile.defineCMacro("HAVE_STRLCAT", null);
-    compile.defineCMacro("HAVE_STRLCPY", null);
-    compile.defineCMacro("HAVE_STRNDUP", null);
     compile.defineCMacro("HAVE_STRNLEN", null);
     compile.defineCMacro("HAVE_STRNLEN", null);
-    compile.defineCMacro("HAVE_STRSEP", null);
-    compile.defineCMacro("HAVE_TIMEGM", null);
-    compile.defineCMacro("HAVE_ARC4RANDOM_BUF", null);
     compile.defineCMacro("HAVE_ARC4RANDOM_UNIFORM", null);
-    compile.defineCMacro("HAVE_EXPLICIT_BZERO", null);
     compile.defineCMacro("HAVE_GETAUXVAL", null);
-    compile.defineCMacro("HAVE_GETENTROPY", null);
-    compile.defineCMacro("HAVE_GETPAGESIZE", null);
-    compile.defineCMacro("HAVE_SYSLOG", null);
     compile.defineCMacro("HAVE_TIMESPECSUB", null);
     compile.defineCMacro("HAVE_MEMMEM", null);
-    compile.defineCMacro("HAVE_ENDIAN_H", null);
     compile.defineCMacro("HAVE_MACHINE_ENDIAN_H", null);
     compile.defineCMacro("HAVE_ERR_H", null);
     compile.defineCMacro("HAVE_NETINET_IP_H", null);
@@ -778,9 +910,128 @@ const crypto_src_unix = [_][]const u8{
     "ui/ui_openssl.c",
 };
 
+const crypto_src_linux = [_][]const u8{
+    "compat/getprogname_linux.c",
+    "compat/strtonum.c",
+    "compat/freezero.c",
+    "compat/syslog_r.c",
+    "compat/recallocarray.c",
+    "compat/timingsafe_bcmp.c",
+    "compat/timingsafe_memcmp.c",
+};
+
+const crypto_src_macos = [_][]const u8{
+    "compat/freezero.c",
+    "compat/syslog_r.c",
+    "compat/strtonum.c",
+    "compat/recallocarray.c",
+    "compat/timingsafe_bcmp.c",
+    "compat/timingsafe_memcmp.c",
+    "compat/explicit_bzero.c",
+    "compat/reallocarray.c",
+};
+
 const crypto_src_win32 = [_][]const u8{
     "compat/crypto_lock_win.c",
     "bio/b_win.c",
     "ui/ui_openssl_win.c",
     "compat/posix_win.c",
+
+    "compat/getprogname_windows.c",
+    "compat/arc4random.c",
+    "compat/arc4random_uniform.c",
+    "compat/explicit_bzero_win.c",
+    "compat/strlcpy.c",
+    "compat/strlcat.c",
+    "compat/strndup.c",
+    "compat/strsep.c",
+    "compat/timegm.c",
+    "compat/strtonum.c",
+    "compat/freezero.c",
+    "compat/syslog_r.c",
+    "compat/recallocarray.c",
+    "compat/reallocarray.c",
+    "compat/timingsafe_bcmp.c",
+    "compat/timingsafe_memcmp.c",
+    "compat/getpagesize.c",
+    "compat/getentropy_win.c",
+};
+
+const ssl_src = [_][]const u8{
+    "bio_ssl.c",
+    "d1_both.c",
+    "d1_lib.c",
+    "d1_pkt.c",
+    "d1_srtp.c",
+    "pqueue.c",
+    "s3_cbc.c",
+    "s3_lib.c",
+    "ssl_asn1.c",
+    "ssl_both.c",
+    "ssl_cert.c",
+    "ssl_ciph.c",
+    "ssl_ciphers.c",
+    "ssl_clnt.c",
+    "ssl_err.c",
+    "ssl_init.c",
+    "ssl_kex.c",
+    "ssl_lib.c",
+    "ssl_methods.c",
+    "ssl_packet.c",
+    "ssl_pkt.c",
+    "ssl_rsa.c",
+    "ssl_seclevel.c",
+    "ssl_sess.c",
+    "ssl_sigalgs.c",
+    "ssl_srvr.c",
+    "ssl_stat.c",
+    "ssl_tlsext.c",
+    "ssl_transcript.c",
+    "ssl_txt.c",
+    "ssl_versions.c",
+    "t1_enc.c",
+    "t1_lib.c",
+    "tls_buffer.c",
+    "tls_content.c",
+    "tls_key_share.c",
+    "tls_lib.c",
+    "tls12_key_schedule.c",
+    "tls12_lib.c",
+    "tls12_record_layer.c",
+    "tls13_client.c",
+    "tls13_error.c",
+    "tls13_handshake.c",
+    "tls13_handshake_msg.c",
+    "tls13_key_schedule.c",
+    "tls13_legacy.c",
+    "tls13_lib.c",
+    "tls13_quic.c",
+    "tls13_record.c",
+    "tls13_record_layer.c",
+    "tls13_server.c",
+
+    "empty.c",
+};
+
+const tls_src = [_][]const u8{
+    "tls.c",
+    "tls_bio_cb.c",
+    "tls_client.c",
+    "tls_config.c",
+    "tls_conninfo.c",
+    "tls_keypair.c",
+    "tls_server.c",
+    "tls_signer.c",
+    "tls_ocsp.c",
+    "tls_peer.c",
+    "tls_util.c",
+    "tls_verify.c",
+
+    "empty.c",
+};
+
+const tls_win32_src = [_][]const u8{
+    "compat/ftruncate.c",
+    "compat/pread.c",
+    "compat/pwrite.c",
 };
