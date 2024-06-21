@@ -142,7 +142,7 @@ pub fn build(b: *std.Build) !void {
         });
     }
     const openssl_dir = switch (t.os.tag) {
-        .windows => "C:\\Windows\\libressl\\ssl",
+        .windows => "c:\\\\msys64\\\\usr\\\\ssl",
         else => "/etc/ssl",
     };
     const openssl_dir_value = try std.mem.concat(b.allocator, u8, &.{
@@ -239,10 +239,11 @@ pub fn build(b: *std.Build) !void {
     tls.installHeadersDirectory(libressl_dep.path("include"), "", .{
         .include_extensions = &.{".h"},
     });
-    const ca_path = b.pathJoin(&.{ openssl_dir, "cert.pem" });
     const ca_path_value = try std.mem.concat(b.allocator, u8, &.{
         "\"",
-        ca_path,
+        openssl_dir,
+        if (t.os.tag == .windows) "\\\\" else "/",
+        "cert.pem",
         "\"",
     });
     tls.defineCMacro("TLS_DEFAULT_CA_FILE", ca_path_value);
